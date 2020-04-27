@@ -83,7 +83,7 @@ if __name__ == '__main__':
     ])
 
     imports = [
-        'from plox.expr import Expr',
+        'from plox.expr import Expr, Variable',
         'from plox.token import Token',
         'from typing import List'
     ]
@@ -91,7 +91,7 @@ if __name__ == '__main__':
         "Block      : List[Stmt] statements",
         "Break      : Token name",
         "Function   : Token name, List[Token] params, List[Stmt] body, bool anonymous, bool getter",
-        "Class      : Token name, List[Function] methods",
+        "Class      : Token name, Variable superclass, List[Function] methods",
         "Expression : Expr expression",
         "If         : Expr condition, Stmt then_branch, Stmt else_branch",
         "Print      : Expr expression",

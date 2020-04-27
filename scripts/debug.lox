@@ -47,4 +47,6 @@ var func = fun(from, to) {
         return;  // is erroneously reported due to how _for_ loops are built
 };
 
+class oops < oops {}
+
 return "at top level";

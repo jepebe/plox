@@ -98,6 +98,13 @@ class Interpreter(Expr.ExprVisitor, Stmt.StmtVisitor):
         raise _PloxBreakException()
 
     def visit_class_stmt(self, stmt: Class) -> object:
+        superclass = None
+        if stmt.superclass:
+            superclass = self.evaluate(stmt.superclass)
+
+            if not isinstance(superclass, LoxClass):
+                raise PloxRuntimeError(stmt.superclass.name, "Superclass must be a class.")
+
         self.env.define(stmt.name.lexeme, None)
         methods = {}
         for method in stmt.methods:
@@ -106,7 +113,7 @@ class Interpreter(Expr.ExprVisitor, Stmt.StmtVisitor):
             function = LoxFunction(method, self.env, is_initializer, is_getter)
             methods[method.name.lexeme] = function
 
-        klass = LoxClass(stmt.name.lexeme, methods)
+        klass = LoxClass(stmt.name.lexeme, superclass, methods)
         self.env.assign(stmt.name, klass)
         return None
 

@@ -1,0 +1,42 @@
+class Doughnut {
+  cook() {
+    print "Fry until golden brown.";
+  }
+}
+
+class BostonCream < Doughnut {
+  cook() {
+    super.cook();
+    print "Pipe full of custard and coat with chocolate.";
+  }
+}
+
+BostonCream().cook();
+// Prints:
+// Fry until golden brown.
+// Pipe full of custard and coat with chocolate.
+
+
+class Item {
+    init(name, price) {
+        this.name = name;
+        this.price = price;
+        print 'initialize ' + this;
+    }
+
+    cost(count) {
+        return this.price * count;
+    }
+}
+
+class ColoredItem < Item {
+    init(name, price, color) {
+        super.init();
+        this.color = color;
+    }
+
+}
+
+var ci = ColoredItem('ball', 15.0, 'red');
+print ci.cost(10);
+

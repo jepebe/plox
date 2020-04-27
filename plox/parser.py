@@ -36,6 +36,12 @@ class Parser(object):
 
     def _class_declaration(self):
         name = self._consume(TT.IDENTIFIER, "Expect class name.")
+
+        superclass = None
+        if self._match(TT.LESS):
+            self._consume(TT.IDENTIFIER, "Expect superclass name.")
+            superclass = Expr.Variable(self._previous())
+
         self._consume(TT.LEFT_BRACE, "Expect '{' before class body.")
 
         methods = []
@@ -44,7 +50,7 @@ class Parser(object):
 
         self._consume(TT.RIGHT_BRACE, "Expect '}' after class body.")
 
-        return Stmt.Class(name, methods)
+        return Stmt.Class(name, superclass, methods)
 
     def _statement(self):
         if self._match(TT.BREAK):

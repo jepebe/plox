@@ -1,4 +1,4 @@
-from plox.expr import Expr
+from plox.expr import Expr, Variable
 from plox.token import Token
 from typing import List
 
@@ -37,8 +37,9 @@ class Function(Stmt):
 
 
 class Class(Stmt):
-	def __init__(self, name: Token, methods: List[Function]):
+	def __init__(self, name: Token, superclass: Variable, methods: List[Function]):
 		self.name = name
+		self.superclass = superclass
 		self.methods = methods
 
 	def accept(self, visitor):

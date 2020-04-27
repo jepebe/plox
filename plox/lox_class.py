@@ -6,8 +6,9 @@ from plox.lox_instance import LoxInstance
 
 
 class LoxClass(LoxCallable):
-    def __init__(self, name: str, methods: Dict[str, LoxFunction]):
+    def __init__(self, name: str, superclass: 'LoxClass', methods: Dict[str, LoxFunction]):
         self.name = name
+        self.superclass = superclass
         self.methods = methods
 
     def __str__(self):
@@ -27,6 +28,12 @@ class LoxClass(LoxCallable):
         return 0
 
     def find_method(self, name) -> LoxFunction:
-        return self.methods.get(name, None)
+        if name in self.methods:
+            return self.methods[name]
+
+        if self.superclass:
+            return self.superclass.find_method(name)
+
+        return None
 
 

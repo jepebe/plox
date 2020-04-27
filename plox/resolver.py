@@ -88,6 +88,12 @@ class Resolver(Expr.ExprVisitor, Stmt.StmtVisitor):
         self._declare(stmt.name)
         self._define(stmt.name)
 
+        if stmt.superclass and stmt.name.lexeme == stmt.superclass.name.lexeme:
+            self.error(stmt.superclass.name, "A class cannot inherit from itself.")
+
+        if stmt.superclass:
+            self._resolve_expression(stmt.superclass)
+
         self._begin_scope()
         self.scopes.current()['this'] = {'defined': True, 'accessed': True, 'token': stmt.name}
 
