@@ -1,0 +1,50 @@
+fun bad() {
+  var a = "first";
+  var a = "second";
+}
+
+var c;
+
+fun scoped(a) {
+    var b = 3;
+    var d = 2;
+
+    return b * 2;
+}
+
+var a = "outer";
+{
+  var a = a;
+}
+fun fn(a, b, c) {
+    var f = fun(x) { return x * x; };
+    return f(a) + f(b) + f(c);
+    print f(a + b + c);
+}
+print fn(1, 2, 3);
+
+fun returns(a){
+    if (a)
+        return 'a?';
+    else {
+        a = a + a;
+        return a;
+        a = a + a;
+        a = a + a;
+    }
+    var rb = 9;
+    return 'b';
+    print a + rb;
+}
+
+break;
+
+var func = fun(from, to) {
+    while (from < to)
+        return;
+
+    for(var a = from; a <= to; a = a + 1)
+        return;  // is erroneously reported due to how _for_ loops are built
+};
+
+return "at top level";

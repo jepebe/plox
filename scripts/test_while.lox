@@ -1,0 +1,17 @@
+var c = 5;
+
+while ( c > 0) {
+    print c;
+    c = c - 1;
+}
+print c == 0;
+
+var a = 0;
+var b = 1;
+
+while (a < 10000) {
+  print a;
+  var temp = a;
+  a = b;
+  b = temp + b;
+}

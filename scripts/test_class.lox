@@ -1,0 +1,57 @@
+class Breakfast {
+  cook() {
+    print "Eggs a-fryin'!";
+  }
+
+  serve(who) {
+    print "Enjoy your breakfast, " + who + ".";
+  }
+}
+
+print Breakfast;
+
+class Bagel {}
+var bagel = Bagel();
+bagel.toasted = true;
+print bagel; // Prints "Bagel instance".
+print 'bagel is toasted? ' + bagel.toasted;
+
+
+class DevonshireCream {
+  serveOn() {
+    return "Scones";
+  }
+}
+
+print DevonshireCream; // Prints "DevonshireCream".
+var cream = DevonshireCream();
+print 'Devonshire Cream serve on? ' + cream.serveOn();
+
+class Bacon {
+  eat() {
+    print "Crunch crunch crunch!";
+  }
+}
+
+Bacon().eat(); // Prints "Crunch crunch crunch!".
+
+class Foo {
+  init() {
+    print this;
+  }
+}
+
+var foo = Foo();
+print foo.init();
+
+class Foo {
+  init() {
+    #return "something else"; # Resolver error
+  }
+}
+
+class Foo {
+  init() {
+    return;
+  }
+}
