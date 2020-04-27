@@ -31,7 +31,7 @@ class Item {
 
 class ColoredItem < Item {
     init(name, price, color) {
-        super.init();
+        super.init(name, price);
         this.color = color;
     }
 

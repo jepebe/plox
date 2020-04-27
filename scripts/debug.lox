@@ -49,4 +49,13 @@ var func = fun(from, to) {
 
 class oops < oops {}
 
+class Eclair {
+  cook() {
+    super.cook();
+    print "Pipe full of crème pâtissière.";
+  }
+}
+
+super.notEvenInAClass();
+
 return "at top level";

@@ -3,7 +3,7 @@ from typing import List
 from plox.environment import Environment
 import plox.expr as Expr
 import plox.stmt as Stmt
-from plox.expr import Get, Set, This
+from plox.expr import Get, Set, This, Super
 from plox.lox_callable import LoxCallable
 from plox.lox_class import LoxClass
 from plox.lox_function import LoxFunction
@@ -98,6 +98,7 @@ class Interpreter(Expr.ExprVisitor, Stmt.StmtVisitor):
         raise _PloxBreakException()
 
     def visit_class_stmt(self, stmt: Class) -> object:
+        environment = self.env
         superclass = None
         if stmt.superclass:
             superclass = self.evaluate(stmt.superclass)
@@ -105,16 +106,25 @@ class Interpreter(Expr.ExprVisitor, Stmt.StmtVisitor):
             if not isinstance(superclass, LoxClass):
                 raise PloxRuntimeError(stmt.superclass.name, "Superclass must be a class.")
 
-        self.env.define(stmt.name.lexeme, None)
+        environment.define(stmt.name.lexeme, None)
+
+        if stmt.superclass:
+            environment = Environment(environment)
+            environment.define('super', superclass)
+
         methods = {}
         for method in stmt.methods:
             is_initializer = method.name.lexeme == 'init'
             is_getter = method.getter
-            function = LoxFunction(method, self.env, is_initializer, is_getter)
+            function = LoxFunction(method, environment, is_initializer, is_getter)
             methods[method.name.lexeme] = function
 
         klass = LoxClass(stmt.name.lexeme, superclass, methods)
-        self.env.assign(stmt.name, klass)
+
+        if superclass:
+            environment = environment.enclosing
+
+        environment.assign(stmt.name, klass)
         return None
 
     def visit_expression_stmt(self, stmt: Stmt.Expression) -> object:
@@ -222,6 +232,19 @@ class Interpreter(Expr.ExprVisitor, Stmt.StmtVisitor):
         value = self.evaluate(expr.value)
         objct.set(expr.name, value)
         return value
+
+    def visit_super_expr(self, expr: Super) -> object:
+        distance = self._locals.get(expr)
+        superclass = self.env.get_at(distance, "super")
+
+        # "this" is always one level nearer than "super"'s environment.
+        objct = self.env.get_at(distance - 1, "this")
+        method = superclass.find_method(expr.method.lexeme)
+
+        if not method:
+            raise PloxRuntimeError(expr.method, f"Undefined property '{expr.method.lexeme}'.")
+
+        return method.bind(objct)
 
     def visit_this_expr(self, expr: This) -> object:
         return self._look_up_variable(expr.keyword, expr)

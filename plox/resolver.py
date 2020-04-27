@@ -4,8 +4,6 @@ from typing import List
 
 import plox.expr as Expr
 import plox.stmt as Stmt
-from plox.expr import Get, Set, This
-from plox.stmt import Class
 from plox.token import Token
 
 
@@ -25,7 +23,8 @@ class LoopType(Enum):
 
 class ClassType(Enum):
     NONE = auto(),
-    CLASS = auto()
+    CLASS = auto(),
+    SUBCLASS = auto()
 
 
 class Scope(object):
@@ -83,7 +82,7 @@ class Resolver(Expr.ExprVisitor, Stmt.StmtVisitor):
             self.error(expr.name, "'break' outside loop.")
         return None
 
-    def visit_class_stmt(self, stmt: Class) -> object:
+    def visit_class_stmt(self, stmt: Stmt.Class) -> object:
         self.class_scopes.push(ClassType.CLASS)
         self._declare(stmt.name)
         self._define(stmt.name)
@@ -92,7 +91,12 @@ class Resolver(Expr.ExprVisitor, Stmt.StmtVisitor):
             self.error(stmt.superclass.name, "A class cannot inherit from itself.")
 
         if stmt.superclass:
+            self.class_scopes.update(ClassType.SUBCLASS)
             self._resolve_expression(stmt.superclass)
+
+        if stmt.superclass:
+            self._begin_scope()
+            self.scopes.current()['super'] = {'defined': True, 'accessed': True, 'token': stmt.superclass.name}
 
         self._begin_scope()
         self.scopes.current()['this'] = {'defined': True, 'accessed': True, 'token': stmt.name}
@@ -106,6 +110,10 @@ class Resolver(Expr.ExprVisitor, Stmt.StmtVisitor):
             self._resolve_function(method, declaration)
 
         self._end_scope()
+
+        if stmt.superclass:
+            self._end_scope()
+
         self.class_scopes.pop()
         return None
 
@@ -192,7 +200,7 @@ class Resolver(Expr.ExprVisitor, Stmt.StmtVisitor):
             self._resolve_expression(arg)
         return None
 
-    def visit_get_expr(self, expr: Get) -> object:
+    def visit_get_expr(self, expr: Expr.Get) -> object:
         self._resolve_expression(expr.objct)
         return None
 
@@ -208,9 +216,18 @@ class Resolver(Expr.ExprVisitor, Stmt.StmtVisitor):
         self._resolve_expression(expr.right)
         return None
 
-    def visit_set_expr(self, expr: Set) -> object:
+    def visit_set_expr(self, expr: Expr.Set) -> object:
         self._resolve_expression(expr.value)
         self._resolve_expression(expr.objct)
+        return None
+
+    def visit_super_expr(self, expr: Expr.Super) -> object:
+        if self.class_scopes.current() == ClassType.NONE:
+            self.error(expr.keyword, "Cannot use 'super' outside of a class.")
+        elif self.class_scopes.current() != ClassType.SUBCLASS:
+            self.error(expr.keyword, "Cannot use 'super' in a class with no superclass.")
+
+        self._resolve_local(expr, expr.keyword)
         return None
 
     def visit_ternary_expr(self, expr: Expr.Ternary) -> object:
@@ -219,7 +236,7 @@ class Resolver(Expr.ExprVisitor, Stmt.StmtVisitor):
         self._resolve_expression(expr.else_branch)
         return None
 
-    def visit_this_expr(self, expr: This) -> object:
+    def visit_this_expr(self, expr: Expr.This) -> object:
         if self.class_scopes.current() == ClassType.NONE:
             self.error(expr.keyword, "Cannot use 'this' outside of a class.")
             return None

@@ -81,6 +81,15 @@ class Set(Expr):
 		return visitor.visit_set_expr(self)
 
 
+class Super(Expr):
+	def __init__(self, keyword: Token, method: Token):
+		self.keyword = keyword
+		self.method = method
+
+	def accept(self, visitor):
+		return visitor.visit_super_expr(self)
+
+
 class Ternary(Expr):
 	def __init__(self, condition: Expr, then_branch: Expr, else_branch: Expr):
 		self.condition = condition
@@ -147,6 +156,10 @@ class ExprVisitor(object):
 
 	def visit_set_expr(self, expr: Set) -> object:
 		print("[visit_set_expr] Not implemented!")
+		return None
+
+	def visit_super_expr(self, expr: Super) -> object:
+		print("[visit_super_expr] Not implemented!")
 		return None
 
 	def visit_ternary_expr(self, expr: Ternary) -> object:

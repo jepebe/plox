@@ -307,6 +307,12 @@ class Parser(object):
         if self._match(TT.NUMBER, TT.STRING):
             return Expr.Literal(self._previous().literal)
 
+        if self._match(TT.SUPER):
+            keyword = self._previous()
+            self._consume(TT.DOT, "Expect '.' after 'super'.")
+            method = self._consume(TT.IDENTIFIER, "Expect superclass method name.")
+            return Expr.Super(keyword, method)
+
         if self._match(TT.THIS):
             return Expr.This(self._previous())
 
