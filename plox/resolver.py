@@ -95,7 +95,7 @@ class Resolver(Expr.ExprVisitor, Stmt.StmtVisitor):
             declaration = FunctionType.METHOD
             if method.name.lexeme == 'init':
                 declaration = FunctionType.INITIALIZER
-            if method.getter:
+            elif method.getter:
                 declaration = FunctionType.GETTER
             self._resolve_function(method, declaration)
 
@@ -255,6 +255,8 @@ class Resolver(Expr.ExprVisitor, Stmt.StmtVisitor):
             self._define(param)
             #  self._mark_as_accessed(param, self.scopes[-1])  # function parameters can be ignored?
         self._resolve_statements(function.body)
+        if func_type == FunctionType.GETTER and not self.return_scopes.current():
+            self.error(function.name, f'Property getter without return statement.', warning=True)
         self._end_scope()
         self.function_scopes.pop()
 
