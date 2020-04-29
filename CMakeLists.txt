@@ -3,10 +3,10 @@ project(plox)
 
 set(CMAKE_CXX_STANDARD 14)
 
-include_directories(clox/)
+include_directories(clox)
 
 add_executable(clox
         clox/main.c
         clox/chunk.c
         clox/memory.c
-        clox/debug.c clox/value.c)
+        clox/debug.c clox/value.c clox/vm.c clox/vm.h)

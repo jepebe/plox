@@ -72,7 +72,7 @@ int getLine(Chunk *chunk, int offset) {
     return line;
 }
 
-void writeConstant(Chunk *chunk, Value value, int line) {
+int writeConstant(Chunk *chunk, Value value, int line) {
     int index = addConstant(chunk, value);
     if (index > 255) {
         writeChunk(chunk, OP_CONSTANT_LONG, line);
@@ -83,5 +83,6 @@ void writeConstant(Chunk *chunk, Value value, int line) {
         writeChunk(chunk, OP_CONSTANT, line);
         writeChunk(chunk, index, line);
     }
+    return index;
 }
 
