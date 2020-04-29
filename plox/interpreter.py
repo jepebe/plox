@@ -165,12 +165,12 @@ class Interpreter(Expr.ExprVisitor, Stmt.StmtVisitor):
         raise PloxReturnException(value)
 
     def visit_var_stmt(self, stmt: Stmt.Var) -> object:
-        self.env.define(stmt.name.lexeme, None)
+        value = None
 
         if stmt.initializer is not None:
             value = self.evaluate(stmt.initializer)
-            self.env.assign(stmt.name, value)
 
+        self.env.define(stmt.name.lexeme, value)
         return None
 
     def visit_while_stmt(self, stmt: Stmt.While) -> object:
