@@ -1,0 +1,3 @@
+[38;5;226m[line 7] Warning at 'isOdd': Local variable declared but never used.[0m
+0 error(s) and 1 warning(s) occurred
+[38;5;1m[RuntimeError at line 4] Undefined variable 'isOdd'.[0m

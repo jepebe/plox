@@ -1,0 +1,7 @@
+[38;5;1m[line 1] Error at 'and': Expect expression.[0m
+[38;5;1m[line 1] Error at 'else': Expect class name.[0m
+[38;5;1m[line 1] Error at 'fun': Expect '(' after 'for'.[0m
+[38;5;1m[line 1] Error at 'nil': Expect '(' after 'if'.[0m
+[38;5;1m[line 1] Error at 'this': Expect '.' after 'super'.[0m
+[38;5;1m[line 1] Error at 'while': Expect variable name.[0m
+6 error(s) and 0 warning(s) occurred

@@ -1,0 +1,18 @@
+[38;5;226m[line 2] Warning at 'a1': Local variable declared but never used.[0m
+[38;5;226m[line 3] Warning at 'a2': Local variable declared but never used.[0m
+[38;5;226m[line 4] Warning at 'a3': Local variable declared but never used.[0m
+[38;5;226m[line 5] Warning at 'a4': Local variable declared but never used.[0m
+[38;5;226m[line 6] Warning at 'a5': Local variable declared but never used.[0m
+[38;5;226m[line 7] Warning at 'a6': Local variable declared but never used.[0m
+[38;5;226m[line 8] Warning at 'a7': Local variable declared but never used.[0m
+[38;5;226m[line 9] Warning at 'a8': Local variable declared but never used.[0m
+[38;5;226m[line 10] Warning at 'a9': Local variable declared but never used.[0m
+[38;5;226m[line 11] Warning at 'a10': Local variable declared but never used.[0m
+[38;5;226m[line 12] Warning at 'a11': Local variable declared but never used.[0m
+[38;5;226m[line 13] Warning at 'a12': Local variable declared but never used.[0m
+[38;5;226m[line 14] Warning at 'a13': Local variable declared but never used.[0m
+[38;5;226m[line 15] Warning at 'a14': Local variable declared but never used.[0m
+[38;5;226m[line 16] Warning at 'a15': Local variable declared but never used.[0m
+[38;5;226m[line 17] Warning at 'a16': Local variable declared but never used.[0m
+0 error(s) and 16 warning(s) occurred
+RecursionError: maximum recursion depth exceeded

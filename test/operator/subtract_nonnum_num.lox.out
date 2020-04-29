@@ -1,0 +1,1 @@
+[38;5;1m[RuntimeError at line 1] Unsupported operand type(s) for -: 'str' and 'int'[0m
