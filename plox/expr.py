@@ -81,6 +81,16 @@ class Set(Expr):
 		return visitor.visit_set_expr(self)
 
 
+class Subscript(Expr):
+	def __init__(self, objct: Expr, bracket: Token, index: Expr):
+		self.objct = objct
+		self.bracket = bracket
+		self.index = index
+
+	def accept(self, visitor):
+		return visitor.visit_subscript_expr(self)
+
+
 class Super(Expr):
 	def __init__(self, keyword: Token, method: Token):
 		self.keyword = keyword
@@ -156,6 +166,10 @@ class ExprVisitor(object):
 
 	def visit_set_expr(self, expr: Set) -> object:
 		print("[visit_set_expr] Not implemented!")
+		return None
+
+	def visit_subscript_expr(self, expr: Subscript) -> object:
+		print("[visit_subscript_expr] Not implemented!")
 		return None
 
 	def visit_super_expr(self, expr: Super) -> object:

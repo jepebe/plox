@@ -76,6 +76,7 @@ if __name__ == '__main__':
         "Literal  : object value",
         "Logical  : Expr left, Token operator, Expr right",
         "Set      : Expr objct, Token name, Expr value",
+        "Subscript: Expr objct, Token bracket, Expr index",
         "Super    : Token keyword, Token method",
         "Ternary  : Expr condition, Expr then_branch, Expr else_branch",
         "This     : Token keyword",

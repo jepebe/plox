@@ -1,0 +1,21 @@
+class A {
+    init(a) {
+        this.a = a;
+    }
+    __get__ (index) {
+        return '[' + index * this.a + ']';
+    }
+}
+class B {
+    init(b) {
+        this.b = A(b);
+    }
+
+    property {
+        return this.b;
+    }
+}
+
+var b = B(3.14);
+print b.property[1];
+print b.property[2];

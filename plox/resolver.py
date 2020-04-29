@@ -221,6 +221,11 @@ class Resolver(Expr.ExprVisitor, Stmt.StmtVisitor):
         self._resolve_expression(expr.objct)
         return None
 
+    def visit_subscript_expr(self, expr: Expr.Subscript) -> object:
+        self._resolve_expression(expr.objct)
+        self._resolve_expression(expr.index)
+        return None
+
     def visit_super_expr(self, expr: Expr.Super) -> object:
         if self.class_scopes.current() == ClassType.NONE:
             self.error(expr.keyword, "Cannot use 'super' outside of a class.")

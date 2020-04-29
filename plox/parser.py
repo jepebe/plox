@@ -277,6 +277,10 @@ class Parser(object):
             elif self._match(TT.DOT):
                 name = self._consume(TT.IDENTIFIER, "Expect property name after '.'.")
                 expr = Expr.Get(expr, name)
+            elif self._match(TT.LEFT_BRACKET):
+                index_expr = self._expression()
+                bracket = self._consume(TT.RIGHT_BRACKET, "Expect ']' after expression.")
+                expr = Expr.Subscript(expr, bracket, index_expr)
             else:
                 break
 

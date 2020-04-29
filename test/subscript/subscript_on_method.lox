@@ -1,0 +1,14 @@
+class A {
+    init() {
+        this.a = 1;
+    }
+
+    __get__ (index) {
+        return '[' + index + ']';
+    }
+    method (b) {
+        return this.a * b;
+    }
+}
+var a = A();
+print m.method[];

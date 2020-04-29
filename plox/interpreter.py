@@ -238,7 +238,18 @@ class Interpreter(Expr.ExprVisitor, Stmt.StmtVisitor):
         objct.set(expr.name, value)
         return value
 
-    def visit_super_expr(self, expr: Super) -> object:
+    def visit_subscript_expr(self, expr: Expr.Subscript) -> object:
+        obj = self.evaluate(expr.objct)
+        if isinstance(obj, str):
+            return obj[self.evaluate(expr.index)]
+        elif isinstance(obj, LoxInstance):
+            subscript = obj.find_method('__get__')
+            if subscript:
+                return subscript.call(self, [self.evaluate(expr.index)])
+
+        raise PloxRuntimeError(expr.bracket, "Subscript not supported.")
+
+    def visit_super_expr(self, expr: Expr.Super) -> object:
         distance = self._locals.get(expr)
         superclass = self.env.get_at(distance, "super")
 

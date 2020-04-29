@@ -6,6 +6,8 @@ TOKEN_TYPES = {
     ')': TokenType.RIGHT_PAREN,
     '{': TokenType.LEFT_BRACE,
     '}': TokenType.RIGHT_BRACE,
+    '[': TokenType.LEFT_BRACKET,
+    ']': TokenType.RIGHT_BRACKET,
     ',': TokenType.COMMA,
     '.': TokenType.DOT,
     '-': TokenType.MINUS,
@@ -144,7 +146,7 @@ class Scanner(object):
     def _scan_token(self):
         c = self._advance()
 
-        if c in ('(', ')', '{', '}', ',', '.', '-', '+', ';', '*', '?', ':'):
+        if c in ('(', ')', '[', ']', '{', '}', ',', '.', '-', '+', ';', '*', '?', ':'):
             self._add_token(TOKEN_TYPES[c])
         elif c in ('!', '=', '<', '>'):
             if self._match('='):

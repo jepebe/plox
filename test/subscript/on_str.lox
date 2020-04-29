@@ -1,0 +1,3 @@
+var s = 'abcdef';
+
+print 'string subscript: s[1] ->' + (s[1] == 'b');

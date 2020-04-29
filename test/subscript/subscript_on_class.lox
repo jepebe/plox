@@ -1,0 +1,12 @@
+class A {
+    init() {
+        this.a = 1;
+    }
+
+    __get__ (index) {
+        return '[' + index + ']';
+    }
+
+}
+
+print A[0];

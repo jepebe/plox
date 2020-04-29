@@ -1,0 +1,6 @@
+class B {
+    init() {
+    }
+}
+var b = B();
+b[1];
