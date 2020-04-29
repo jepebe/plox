@@ -108,7 +108,8 @@ class Interpreter(Expr.ExprVisitor, Stmt.StmtVisitor):
             superclass = self.evaluate(stmt.superclass)
 
             if not isinstance(superclass, LoxClass):
-                raise PloxRuntimeError(stmt.superclass.name, "Superclass must be a class.")
+                msg = "Superclass must be a class."
+                raise PloxRuntimeError(stmt.superclass.name, msg)
 
         environment.define(stmt.name.lexeme, None)
 
@@ -246,7 +247,8 @@ class Interpreter(Expr.ExprVisitor, Stmt.StmtVisitor):
         method = superclass.find_method(expr.method.lexeme)
 
         if not method:
-            raise PloxRuntimeError(expr.method, f"Undefined property '{expr.method.lexeme}'.")
+            msg = f"Undefined property '{expr.method.lexeme}'."
+            raise PloxRuntimeError(expr.method, msg)
 
         return method.bind(objct)
 
@@ -304,7 +306,8 @@ class Interpreter(Expr.ExprVisitor, Stmt.StmtVisitor):
             arguments.append(self.evaluate(arg))
 
         if not isinstance(func, LoxCallable):
-            raise PloxRuntimeError(expr.paren, "Can only call functions and classes.")
+            msg = "Can only call functions and classes."
+            raise PloxRuntimeError(expr.paren, msg)
 
         if len(arguments) != func.arity():
             msg = f"Expected {func.arity()} arguments but got {len(arguments)}."
