@@ -1,0 +1,10 @@
+var i = 0;
+for(; i < 2; i = i + 1) break;
+print 'i should be 0: ' + (i == 0);
+
+for (var d = 0; d < 10; d = d + 1) {
+    print 'd=' + d;
+    if (d == 5) {
+        break;
+    }
+}
