@@ -37,6 +37,9 @@ class Lox(object):
         self.warning_count = 0
         self.error_count = 0
 
+    def scanner_error(self, line, message):
+        self._report(line, '', message, False)
+
     def token_error(self, token, message, warning=False, after=False):
         if token.type == TokenType.EOF:
             self._report(token.line, " at end", message, warning)
@@ -44,9 +47,6 @@ class Lox(object):
             self._report(token.line, f' after \'{token.lexeme}\'', message, warning)
         else:
             self._report(token.line, f' at \'{token.lexeme}\'', message, warning)
-
-    def error(self, token, message, warning=False):
-        self._report(token.line, "", message, warning)
 
     def prompt_error(self, token, message):
         self.had_error = True
@@ -68,8 +68,8 @@ class Lox(object):
         else:
             self.warning_count += 1
 
-    def run(self, source, error_handler):
-        scanner = Scanner(source, self.token_error)
+    def run(self, source, error_handler=None):
+        scanner = Scanner(source, self.scanner_error)
         parser = Parser(scanner.scan_tokens(), self.token_error)
         statements = parser.parse()
 
@@ -96,7 +96,7 @@ def run_file(path):
         data = lf.read()
 
     lox = Lox()
-    lox.run(data, lox.error)
+    lox.run(data)
 
     if lox.had_error:
         sys.exit(65)
