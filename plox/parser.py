@@ -1,5 +1,6 @@
 import plox.expr as Expr
 import plox.stmt as Stmt
+from plox.lox_bool import lox_false, lox_true
 from plox.plox_errors import PloxParserError
 from plox.token import Token
 from plox.token_type import TokenType as TT, EQUALITY_TOKENS, COMPARISON_TOKENS
@@ -295,9 +296,9 @@ class Parser(object):
 
     def _primary(self):
         if self._match(TT.FALSE):
-            return Expr.Literal(False)
+            return Expr.Literal(lox_false)
         if self._match(TT.TRUE):
-            return Expr.Literal(True)
+            return Expr.Literal(lox_true)
         if self._match(TT.NIL):
             return Expr.Literal(None)
 

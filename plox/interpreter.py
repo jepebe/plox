@@ -3,7 +3,7 @@ from typing import List
 from plox.environment import Environment
 import plox.expr as Expr
 import plox.stmt as Stmt
-from plox.expr import Get, Set, This, Super
+from plox.lox_bool import lox_false, lox_true, LoxBool
 from plox.lox_callable import LoxCallable
 from plox.lox_class import LoxClass
 from plox.lox_function import LoxFunction
@@ -20,10 +20,14 @@ class _PloxBreakException(Exception):
 
 def is_plox_truthy(value):
     if value is None:
-        return False
-    if isinstance(value, bool):
-        return bool(value)
-    return True
+        return lox_false
+    if isinstance(value, LoxBool):
+        return value
+    if value is False:
+        return lox_false
+    elif value is True:
+        return lox_true
+    return lox_true
 
 
 def is_plox_number(operand):
@@ -57,12 +61,12 @@ BINARY_OPS = {
     TokenType.SLASH: lambda left, right: left / right,
     TokenType.STAR: lambda left, right: left * right,
     TokenType.PLUS: lambda left, right: left + right,
-    TokenType.GREATER: lambda left, right: left > right,
-    TokenType.GREATER_EQUAL: lambda left, right: left >= right,
-    TokenType.LESS: lambda left, right: left < right,
-    TokenType.LESS_EQUAL: lambda left, right: left <= right,
-    TokenType.BANG_EQUAL: lambda left, right: left != right,
-    TokenType.EQUAL_EQUAL: lambda left, right: left == right,
+    TokenType.GREATER: lambda left, right: is_plox_truthy(left > right),
+    TokenType.GREATER_EQUAL: lambda left, right: is_plox_truthy(left >= right),
+    TokenType.LESS: lambda left, right: is_plox_truthy(left < right),
+    TokenType.LESS_EQUAL: lambda left, right: is_plox_truthy(left <= right),
+    TokenType.BANG_EQUAL: lambda left, right: is_plox_truthy(left != right),
+    TokenType.EQUAL_EQUAL: lambda left, right: is_plox_truthy(left == right),
 }
 
 
@@ -211,7 +215,7 @@ class Interpreter(Expr.ExprVisitor, Stmt.StmtVisitor):
     def visit_literal_expr(self, expr: Expr.Literal) -> object:
         return expr.value
 
-    def visit_get_expr(self, expr: Get) -> object:
+    def visit_get_expr(self, expr: Expr.Get) -> object:
         obj = self.evaluate(expr.objct)
         if isinstance(obj, LoxInstance):
             result = obj.get(expr.name)
@@ -224,7 +228,7 @@ class Interpreter(Expr.ExprVisitor, Stmt.StmtVisitor):
     def visit_grouping_expr(self, expr: Expr.Grouping) -> object:
         return self.evaluate(expr.expression)
 
-    def visit_set_expr(self, expr: Set) -> object:
+    def visit_set_expr(self, expr: Expr.Set) -> object:
         objct = self.evaluate(expr.objct)
 
         if not isinstance(objct, LoxInstance):
@@ -246,7 +250,7 @@ class Interpreter(Expr.ExprVisitor, Stmt.StmtVisitor):
 
         return method.bind(objct)
 
-    def visit_this_expr(self, expr: This) -> object:
+    def visit_this_expr(self, expr: Expr.This) -> object:
         return self._look_up_variable(expr.keyword, expr)
 
     def visit_unary_expr(self, expr: Expr.Unary) -> object:
@@ -256,7 +260,7 @@ class Interpreter(Expr.ExprVisitor, Stmt.StmtVisitor):
             check_number_operand(expr.operator, right)
             return -right
         elif opt == TokenType.BANG:
-            return not is_plox_truthy(right)
+            return is_plox_truthy(right).notify()
 
         return None
 
