@@ -123,9 +123,7 @@ class Resolver(Expr.ExprVisitor, Stmt.StmtVisitor):
 
     def visit_var_stmt(self, stmt: Stmt.Var) -> object:
         self._declare(stmt.name)
-        if stmt.initializer is None:
-            self.error(stmt.name, "variable definition without assignment.")
-        else:
+        if stmt.initializer is not None:
             self._resolve_expression(stmt.initializer)
         self._define(stmt.name)
         return None
