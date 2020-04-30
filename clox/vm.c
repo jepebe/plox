@@ -28,6 +28,17 @@ Value pop() {
     return *vm.stackTop;
 }
 
+static void ternaryOp() {
+    double else_branch = pop();
+    double then_branch = pop();
+    double condition = pop();
+    if (condition) {
+        push(then_branch);
+    } else {
+        push(else_branch);
+    }
+}
+
 static InterpretResult run() {
 #define READ_BYTE() (*vm.ip++)
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
@@ -60,6 +71,7 @@ static InterpretResult run() {
             case OP_SUBTRACT: BINARY_OP(-); break;
             case OP_MULTIPLY: BINARY_OP(*); break;
             case OP_DIVIDE:   BINARY_OP(/); break;
+            case OP_TERNARY:  ternaryOp(); break;
             case OP_NEGATE:   push(-pop()); break;
             case OP_RETURN: {
                 printValue(pop());
@@ -75,6 +87,19 @@ static InterpretResult run() {
 }
 
 InterpretResult interpret(const char* source) {
-    compile(source);
-    return INTERPRET_OK;
+    Chunk chunk;
+    initChunk(&chunk);
+
+    if (!compile(source, &chunk)) {
+        freeChunk(&chunk);
+        return INTERPRET_COMPILE_ERROR;
+    }
+
+    vm.chunk = &chunk;
+    vm.ip = vm.chunk->code;
+
+    InterpretResult result = run();
+
+    freeChunk(&chunk);
+    return result;
 }
