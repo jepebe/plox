@@ -65,12 +65,11 @@ static void concatenate() {
     ObjString* a = AS_STRING(pop());
 
     int length = a->length + b->length;
-    char* chars = ALLOCATE(char, length + 1);
+    ObjString* result = createString(length);
+    char* chars = result->chars;
     memcpy(chars, a->chars, a->length);
     memcpy(chars + a->length, b->chars, b->length);
-    chars[length] = '\0';
 
-    ObjString* result = takeString(chars, length);
     push(OBJ_VAL(result));
 }
 
