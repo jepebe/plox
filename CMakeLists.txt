@@ -13,4 +13,6 @@ add_executable(clox
         clox/value.c
         clox/vm.c
         clox/compiler.c
-        clox/scanner.c)
+        clox/scanner.c
+        clox/object.c
+        )
