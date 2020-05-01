@@ -17,17 +17,18 @@ typedef enum {
 
 struct sObj {
     ObjType type;
-    struct sObj* next;
+    struct sObj *next;
 };
 
 struct sObjString {
     Obj obj;
     int length;
+    uint32_t hash;
     char chars[];
 };
 
-ObjString* createString(int length);
-ObjString* copyString(const char* chars, int length);
+ObjString *takeString(char *chars, int length);
+ObjString *copyString(const char *chars, int length);
 void printObject(Value value);
 
 static inline bool isObjType(Value value, ObjType type) {
