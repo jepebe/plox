@@ -25,7 +25,7 @@ static void runtimeError(const char *format, ...) {
     fputs("\n", stderr);
 
     size_t instruction = vm.ip - vm.chunk->code - 1;
-    int line = vm.chunk->lines[instruction];
+    int line = getLine(vm.chunk, instruction);
     fprintf(stderr, "[line %d] in script\n", line);
 
     endErrorRed();
@@ -64,10 +64,7 @@ static bool isFalsey(Value value) {
     return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
 }
 
-static void concatenate() {
-    ObjString* b = AS_STRING(pop());
-    ObjString* a = AS_STRING(pop());
-
+static void concatenate(ObjString *a, ObjString * b) {
     int length = a->length + b->length;
     char* chars = ALLOCATE(char, length + 1);
     memcpy(chars, a->chars, a->length);
@@ -80,7 +77,7 @@ static void concatenate() {
 
 static InterpretResult run() {
 #define READ_BYTE() (*vm.ip++)
-#define READ_SHORT() (vm.ip += 2, (uint16_t)((vm.ip[-2] << 8u) | vm.ip[-1]))
+#define READ_SHORT() (vm.ip += 2, (uint16_t)(((unsigned) vm.ip[-2] << 8u) | vm.ip[-1]))
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
 #define READ_STRING() AS_STRING(READ_CONSTANT())
 #define BINARY_OP(valueType, op) \
@@ -95,6 +92,7 @@ static InterpretResult run() {
         push(valueType(a op b)); \
     } while (false)
 
+    char buffer[50];
     for (;;) {
 #ifdef DEBUG_TRACE_EXECUTION
         printf("          ");
@@ -162,7 +160,23 @@ static InterpretResult run() {
             case OP_LESS:     BINARY_OP(BOOL_VAL, <); break;
             case OP_ADD: {
                 if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
-                    concatenate();
+                    ObjString* b = AS_STRING(pop());
+                    ObjString* a = AS_STRING(pop());
+                    concatenate(a, b);
+                } else if (IS_STRING(peek(0)) && IS_NUMBER(peek(1))) {
+                    ObjString* b = AS_STRING(pop());
+                    double a_double = AS_NUMBER(pop());
+                    int length = sprintf(buffer, "%g", a_double);
+                    ObjString *a = copyString(buffer, length);
+                    concatenate(a, b);
+
+                } else if (IS_NUMBER(peek(0)) && IS_STRING(peek(1))) {
+                    double b_double = AS_NUMBER(pop());
+                    ObjString* a = AS_STRING(pop());
+                    int length = sprintf(buffer, "%g", b_double);
+                    ObjString *b = copyString(buffer, length);
+                    concatenate(a, b);
+
                 } else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
                     double b = AS_NUMBER(pop());
                     double a = AS_NUMBER(pop());
@@ -176,18 +190,6 @@ static InterpretResult run() {
             case OP_SUBTRACT: BINARY_OP(NUMBER_VAL, -); break;
             case OP_MULTIPLY: BINARY_OP(NUMBER_VAL, *); break;
             case OP_DIVIDE:   BINARY_OP(NUMBER_VAL, /); break;
-            case OP_TERNARY: {
-                Value else_branch = pop();
-                Value then_branch = pop();
-                bool condition = !isFalsey(pop());
-
-                if (condition) {
-                    push(then_branch);
-                } else {
-                    push(else_branch);
-                }
-                break;
-            }
             case OP_NOT: {
                 push(BOOL_VAL(isFalsey(pop())));
                 break;

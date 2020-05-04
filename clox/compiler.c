@@ -134,8 +134,8 @@ static void emitLoop(int loopStart) {
     int offset = currentChunk()->count - loopStart + 2;
     if (offset > UINT16_MAX) error("Loop body too large.");
 
-    emitByte((offset >> 8u) & 0xff);
-    emitByte(offset & 0xff);
+    emitByte(((unsigned) offset >> 8u) & 0xffu);
+    emitByte((unsigned) offset & 0xffu);
 }
 
 static int emitJump(uint8_t instruction) {
@@ -171,8 +171,8 @@ static void patchJump(int offset) {
         error("Too much code to jump over.");
     }
 
-    currentChunk()->code[offset] = (jump >> 8) & 0xff;
-    currentChunk()->code[offset + 1] = jump & 0xff;
+    currentChunk()->code[offset] = ((unsigned) jump >> 8u) & 0xffu;
+    currentChunk()->code[offset + 1] = (unsigned) jump & 0xffu;
 }
 
 static void initCompiler(Compiler* compiler) {
@@ -285,7 +285,7 @@ static void defineVariable(uint8_t global) {
     emitBytes(OP_DEFINE_GLOBAL, global);
 }
 
-static void and_(bool canAssign) {
+static void and_(bool __unused canAssign) {
     int endJump = emitJump(OP_JUMP_IF_FALSE);
 
     emitByte(OP_POP);
@@ -294,7 +294,7 @@ static void and_(bool canAssign) {
     patchJump(endJump);
 }
 
-static void binary(bool canAssign) {
+static void binary(bool __unused canAssign) {
     // Remember the operator.
     TokenType operatorType = parser.previous.type;
 
@@ -319,20 +319,22 @@ static void binary(bool canAssign) {
     }
 }
 
-static void ternary(bool canAssign) {
-    // Compile the right operand.
-    ParseRule* rule = getRule(TOKEN_QUESTION_MARK);
-    // TODO: This may be incorrect, since both expression are evaluated
-    //  both side effects (if any) will be effectuated?
-    parsePrecedence((Precedence)(rule->precedence + 1));
+static void ternary(bool __unused canAssign) {
+    int then_jump = emitJump(OP_JUMP_IF_FALSE);
+    emitByte(OP_POP);
+    expression();
 
-    consume(TOKEN_COLON, "Expect ')' after expression.");
+    consume(TOKEN_COLON, "Expect ':' after expression.");
 
-    parsePrecedence((Precedence)(rule->precedence + 1));
-    emitByte(OP_TERNARY);
+    int else_jump = emitJump(OP_JUMP);
+    patchJump(then_jump);
+    emitByte(OP_POP);
+
+    expression();
+    patchJump(else_jump);
 }
 
-static void literal(bool canAssign) {
+static void literal(bool __unused canAssign) {
     switch (parser.previous.type) {
         case TOKEN_FALSE: emitByte(OP_FALSE); break;
         case TOKEN_NIL: emitByte(OP_NIL); break;
@@ -514,17 +516,17 @@ static void statement() {
     }
 }
 
-static void grouping(bool canAssign) {
+static void grouping(bool __unused canAssign) {
     expression();
     consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
 }
 
-static void number(bool canAssign) {
+static void number(bool __unused canAssign) {
     double value = strtod(parser.previous.start, NULL);
     emitConstant(NUMBER_VAL(value));
 }
 
-static void or_(bool canAssign) {
+static void or_(bool __unused canAssign) {
     int elseJump = emitJump(OP_JUMP_IF_FALSE);
     int endJump = emitJump(OP_JUMP);
 
@@ -535,7 +537,7 @@ static void or_(bool canAssign) {
     patchJump(endJump);
 }
 
-static void string(bool canAssign) {
+static void string(bool __unused canAssign) {
     emitConstant(OBJ_VAL(copyString(parser.previous.start + 1,
                                     parser.previous.length - 2)));
 }
@@ -563,7 +565,7 @@ static void variable(bool canAssign) {
     namedVariable(parser.previous, canAssign);
 }
 
-static void unary(bool canAssign) {
+static void unary(bool __unused canAssign) {
     TokenType operatorType = parser.previous.type;
 
     // Compile the operand.
