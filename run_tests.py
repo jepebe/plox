@@ -1,5 +1,7 @@
 import os
 import io
+import subprocess
+import sys
 from contextlib import redirect_stdout
 
 import plox.lox as lox
@@ -35,13 +37,9 @@ def list_directory(directory):
     return dirs, files
 
 
-def run_test(test_file, directory, fail_hard=False):
-    print(f'Running: {test_file[len(directory):-4]} ... ', end='')
-    interpreter = lox.Lox()
-
+def run_plox_test(interpreter, test_file):
     with open(test_file, 'r') as lf:
         data = lf.read()
-
     with io.StringIO() as buf, redirect_stdout(buf):
         try:
             interpreter.run(data)
@@ -49,6 +47,28 @@ def run_test(test_file, directory, fail_hard=False):
             # Handle an exception not handled by Plox
             print('RecursionError: maximum recursion depth exceeded')
         output = buf.getvalue()
+    return output
+
+
+def run_clox_test(interpreter, test_file):
+    result = subprocess.run(['cmake-build-debug/clox', test_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return result.stdout.decode('utf-8')
+
+
+def run_test(test_file, directory, fail_hard=False):
+    print(f'Running: {test_file[len(directory):-4]} ... ', end='')
+    interpreter = lox.Lox()
+
+    output = run_plox_test(interpreter, test_file)
+    c_output = run_clox_test(interpreter, test_file)
+
+    if output != c_output:
+        print(red(f'failed! [plox != clox]'))
+        print('plox:')
+        print(output)
+        print('clox:')
+        print(c_output)
+        return False
 
     test_output_file = test_file + '.out'
     if not os.path.exists(test_output_file):
@@ -108,6 +128,15 @@ def run_tests(directory, fail_hard=True, exclude=None):
 
 
 if __name__ == '__main__':
+    test_path = 'test/'
+    if len(sys.argv) > 2:
+        print('Usage: run_tests [directory]')
+        sys.exit(13)
+    elif len(sys.argv) == 2:
+        test_path = sys.argv[1]
+        if not test_path.endswith('/'):
+            test_path += '/'
+
     excludes = ['test/benchmark/']
-    success, failed, _ = run_tests('test/', fail_hard=False, exclude=excludes)
+    success, failed, _ = run_tests(test_path, fail_hard=False, exclude=excludes)
     print(f'{success} test(s) succeeded and {failed} test(s) failed')
