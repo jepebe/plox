@@ -51,7 +51,7 @@ def run_plox_test(interpreter, test_file):
 
 
 def run_clox_test(interpreter, test_file):
-    result = subprocess.run(['cmake-build-debug/clox', test_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(['cmake-build-debug/clox', test_file], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     return result.stdout.decode('utf-8')
 
 
@@ -66,8 +66,23 @@ def run_test(test_file, directory, fail_hard=False):
         print(red(f'failed! [plox != clox]'))
         print('plox:')
         print(output)
+        print('---')
         print('clox:')
         print(c_output)
+        print('---')
+
+        # hex_output = [hex(ord(x))[2:] for x in output]
+        # hex_c_output = [hex(ord(x))[2:] for x in c_output]
+        #
+        # for i, (a, b) in enumerate(zip(hex_output, hex_c_output)):
+        #     if a != b:
+        #         print(i, a, b)
+        #
+        # print(':'.join(hex_output))
+        # print(':'.join(hex_c_output))
+
+
+
         return False
 
     test_output_file = test_file + '.out'

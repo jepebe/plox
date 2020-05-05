@@ -13,7 +13,7 @@
 #define UINT8_COUNT (UINT8_MAX + 1)
 
 static void startErrorRed() {
-    fprintf(stderr, "\x1b[31m");
+    fprintf(stderr, "\x1b[38;5;1m");
 }
 
 static void endErrorRed() {

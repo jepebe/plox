@@ -15,6 +15,8 @@ typedef struct {
     Token previous;
     bool hadError;
     bool panicMode;
+    int error_count;
+    int warning_count;
 } Parser;
 
 typedef enum {
@@ -64,6 +66,7 @@ static Chunk* currentChunk() {
 static void errorAt(Token* token, const char* message) {
     if (parser.panicMode) return;
     parser.panicMode = true;
+    parser.error_count += 1;
 
     startErrorRed();
     fprintf(stderr, "[line %d] Error", token->line);
@@ -76,8 +79,10 @@ static void errorAt(Token* token, const char* message) {
         fprintf(stderr, " at '%.*s'", token->length, token->start);
     }
 
-    fprintf(stderr, ": %s\n", message);
+    fprintf(stderr, ": %s", message);
     endErrorRed();
+    fprintf(stderr, "\n");
+
     parser.hadError = true;
 }
 
@@ -658,11 +663,19 @@ bool compile(const char* source, Chunk* chunk) {
     compilingChunk = chunk;
     parser.hadError = false;
     parser.panicMode = false;
+    parser.error_count = 0;
+    parser.warning_count = 0;
 
     advance();
     while (!match(TOKEN_EOF)) {
         declaration();
     }
+
+    if(parser.error_count > 0 || parser.warning_count > 0) {
+        printf("%d error(s) and %d warning(s) occurred\n", parser.error_count,
+               parser.warning_count);
+    }
+
     endCompiler();
     return !parser.hadError;
 }   
