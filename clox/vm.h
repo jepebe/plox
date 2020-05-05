@@ -4,12 +4,20 @@
 #include "chunk.h"
 #include "table.h"
 #include "value.h"
+#include "object.h"
 
-#define STACK_MAX 256
+#define FRAMES_MAX 64
+#define STACK_MAX (FRAMES_MAX * UINT8_COUNT)
 
 typedef struct {
-    Chunk *chunk;
-    uint8_t *ip;
+    ObjFunction* function;
+    uint8_t* ip;
+    Value* slots;
+} CallFrame;
+
+typedef struct {
+    CallFrame frames[FRAMES_MAX];
+    int frameCount;
     Value stack[STACK_MAX];
     Value *stackTop;
     Table globals;
