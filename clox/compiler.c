@@ -329,8 +329,8 @@ static void ternary(bool __unused canAssign) {
     int else_jump = emitJump(OP_JUMP);
     patchJump(then_jump);
     emitByte(OP_POP);
-
     expression();
+
     patchJump(else_jump);
 }
 

@@ -7,8 +7,7 @@
 #include "value.h"
 #include "vm.h"
 
-#define ALLOCATE_OBJ(type, objectType, data_type, size) \
-    (type*)allocateObject(sizeof(type) + size * sizeof(data_type), objectType)
+#define ALLOCATE_OBJ(type, objectType) (type*)allocateObject(sizeof(type), objectType)
 
 static Obj *allocateObject(size_t size, ObjType type) {
     Obj *object = (Obj *) reallocate(NULL, 0, size);
@@ -22,42 +21,45 @@ static uint32_t hashString(const char *key, int length) {
     uint32_t hash = 2166136261u;
 
     for (int i = 0; i < length; i++) {
-        hash ^= key[i];
-        hash *= 16777619;
+        hash ^= (unsigned) key[i];
+        hash *= 16777619u;
     }
 
     return hash;
 }
 
-static ObjString *allocateString(const char *chars, int length) {
-    ObjString *string = ALLOCATE_OBJ(ObjString, OBJ_STRING, char, length + 1);
+static ObjString* allocateString(char* chars, int length, uint32_t hash) {
+    ObjString* string = ALLOCATE_OBJ(ObjString, OBJ_STRING);
     string->length = length;
-    memcpy(string->chars, chars, length);
-    string->chars[length] = '\0';
-    string->hash = hashString(string->chars, string->length);
+    string->chars = chars;
+    string->hash = hash;
 
     tableSet(&vm.strings, string, NIL_VAL);
 
     return string;
 }
 
-ObjString *takeString(char *chars, int length) {
+ObjString* takeString(char* chars, int length) {
     uint32_t hash = hashString(chars, length);
     ObjString* interned = tableFindString(&vm.strings, chars, length, hash);
     if (interned != NULL) {
         FREE_ARRAY(char, chars, length + 1);
         return interned;
     }
-    ObjString *new_string = allocateString(chars, length);
-    FREE_ARRAY(char, chars, length + 1);
-    return new_string;
+
+    return allocateString(chars, length, hash);
 }
 
-ObjString *copyString(const char *chars, int length) {
+ObjString* copyString(const char* chars, int length) {
     uint32_t hash = hashString(chars, length);
     ObjString* interned = tableFindString(&vm.strings, chars, length, hash);
     if (interned != NULL) return interned;
-    return allocateString(chars, length);
+
+    char* heapChars = ALLOCATE(char, length + 1);
+    memcpy(heapChars, chars, length);
+    heapChars[length] = '\0';
+
+    return allocateString(heapChars, length, hash);
 }
 
 void printObject(Value value) {
