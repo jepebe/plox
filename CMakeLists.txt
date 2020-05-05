@@ -17,3 +17,5 @@ add_executable(clox
         clox/object.c
         clox/table.c
         )
+
+add_executable(fib tool/fib.c)
