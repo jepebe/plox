@@ -18,10 +18,18 @@ static void resetStack() {
 static void runtimeError(const char *format, ...) {
     startErrorRed();
 
+    CallFrame* frame = &vm.frames[vm.frameCount - 1];
+    size_t instruction = frame->ip - frame->function->chunk.code - 1;
+    int line = frame->function->chunk.lines[instruction];
+    fprintf(stderr, "[RuntimeError at line %d] ", line);
+
     va_list args;
     va_start(args, format);
     vfprintf(stderr, format, args);
     va_end(args);
+
+    endErrorRed();
+
     fputs("\n", stderr);
 
     size_t instruction = vm.ip - vm.chunk->code - 1;
