@@ -151,42 +151,81 @@ static void concatenate(ObjString *a, ObjString * b) {
     push(OBJ_VAL(result));
 }
 
+static inline void print_trace_execution(CallFrame* frame) {
+    printf("          ");
+    for (Value *slot = vm.stack; slot < vm.stackTop; slot++) {
+        printf("[ ");
+        printValue(*slot);
+        printf(" ]");
+    }
+    printf("\n");
+    disassembleInstruction(&frame->function->chunk,
+                           (int)(frame->ip - frame->function->chunk.code));
+}
+
+static inline uint8_t read_byte(CallFrame* frame) {
+    return *frame->ip++;
+}
+
+static inline uint16_t read_short(CallFrame* frame) {
+    frame->ip += 2;
+    return (uint16_t)(((unsigned) frame->ip[-2] << 8u) | frame->ip[-1]);
+}
+
+static inline Value read_constant(CallFrame* frame) {
+    return frame->function->chunk.constants.values[read_byte(frame)];
+}
+
+static inline ObjString* read_string(CallFrame* frame) {
+    return AS_STRING(read_constant(frame));
+}
+
+static inline InterpretResult binary_op(char op, CallFrame* frame) {
+    if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) {
+        runtimeError("Operands must be numbers.");
+        return INTERPRET_RUNTIME_ERROR;
+    }
+
+    double b = AS_NUMBER(pop());
+    double a = AS_NUMBER(pop());
+    Value value;
+    switch(op) {
+        case '-':
+            value = NUMBER_VAL(a - b);
+            break;
+        case '*':
+            value = NUMBER_VAL(a * b);
+            break;
+        case '/':
+            value = NUMBER_VAL(a / b);
+            break;
+        case '<':
+            value = BOOL_VAL(a < b);
+            break;
+        case '>':
+            value = BOOL_VAL(a > b);
+            break;
+        default:
+            runtimeError("Unknown operator '%s'", op);
+            return INTERPRET_RUNTIME_ERROR;
+    }
+    push(value);
+    return INTERPRET_OK;
+}
+
 static InterpretResult run() {
     CallFrame* frame = &vm.frames[vm.frameCount - 1];
-
-#define READ_BYTE() (*frame->ip++)
-#define READ_SHORT() (frame->ip += 2, (uint16_t)(((unsigned) frame->ip[-2] << 8u) | frame->ip[-1]))
-#define READ_CONSTANT() (frame->function->chunk.constants.values[READ_BYTE()])
-#define READ_STRING() AS_STRING(READ_CONSTANT())
-#define BINARY_OP(valueType, op) \
-    do { \
-        if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) { \
-            runtimeError("Operands must be numbers."); \
-            return INTERPRET_RUNTIME_ERROR; \
-            } \
-        \
-        double b = AS_NUMBER(pop()); \
-        double a = AS_NUMBER(pop()); \
-        push(valueType(a op b)); \
-    } while (false)
 
     char buffer[50];
     for (;;) {
 #ifdef DEBUG_TRACE_EXECUTION
-        printf("          ");
-        for (Value *slot = vm.stack; slot < vm.stackTop; slot++) {
-            printf("[ ");
-            printValue(*slot);
-            printf(" ]");
-        }
-        printf("\n");
-        disassembleInstruction(&frame->function->chunk,
-                               (int)(frame->ip - frame->function->chunk.code));
+        print_trace_execution(frame);
 #endif
+        InterpretResult op_result = INTERPRET_OK;
         uint8_t instruction;
-        switch (instruction = READ_BYTE()) {
+        switch (instruction = read_byte(frame)) {
             case OP_CONSTANT: {
-                Value constant = READ_CONSTANT();
+                Value constant = read_constant(frame);
                 push(constant);
                 break;
             }
@@ -195,37 +234,38 @@ static InterpretResult run() {
             case OP_FALSE: push(BOOL_VAL(false)); break;
             case OP_POP: pop(); break;
             case OP_GET_LOCAL: {
-                uint8_t slot = READ_BYTE();
+                uint8_t slot = read_byte(frame);
                 push(frame->slots[slot]);
                 break;
             }
             case OP_GET_GLOBAL: {
-                ObjString* name = READ_STRING();
+                ObjString* name = read_string(frame);
                 Value value;
                 if (!tableGet(&vm.globals, name, &value)) {
                     runtimeError("Undefined variable '%s'.", name->chars);
-                    return INTERPRET_RUNTIME_ERROR;
+                    op_result = INTERPRET_RUNTIME_ERROR;
+                } else {
+                    push(value);
                 }
-                push(value);
                 break;
             }
             case OP_DEFINE_GLOBAL: {
-                ObjString* name = READ_STRING();
+                ObjString* name = read_string(frame);
                 tableSet(&vm.globals, name, peek(0));
                 pop();
                 break;
             }
             case OP_SET_GLOBAL: {
-                ObjString* name = READ_STRING();
+                ObjString* name = read_string(frame);
                 if (tableSet(&vm.globals, name, peek(0))) {
                     tableDelete(&vm.globals, name);
                     runtimeError("Undefined variable '%s'.", name->chars);
-                    return INTERPRET_RUNTIME_ERROR;
+                    op_result = INTERPRET_RUNTIME_ERROR;
                 }
                 break;
             }
             case OP_SET_LOCAL: {
-                uint8_t slot = READ_BYTE();
+                uint8_t slot = read_byte(frame);
                 frame->slots[slot] = peek(0);
                 break;
             }
@@ -235,8 +275,14 @@ static InterpretResult run() {
                 push(BOOL_VAL(valuesEqual(a, b)));
                 break;
             }
-            case OP_GREATER:  BINARY_OP(BOOL_VAL, >); break;
-            case OP_LESS:     BINARY_OP(BOOL_VAL, <); break;
+            case OP_GREATER: {
+                op_result = binary_op('>', frame);
+                break;
+            }
+            case OP_LESS: {
+                op_result = binary_op('<', frame);
+                break;
+            }
             case OP_ADD: {
                 if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
                     ObjString* b = AS_STRING(pop());
@@ -262,13 +308,22 @@ static InterpretResult run() {
                     push(NUMBER_VAL(a + b));
                 } else {
                     runtimeError("Operands must be two numbers or two strings.");
-                    return INTERPRET_RUNTIME_ERROR;
+                    op_result = INTERPRET_RUNTIME_ERROR;
                 }
                 break;
             }
-            case OP_SUBTRACT: BINARY_OP(NUMBER_VAL, -); break;
-            case OP_MULTIPLY: BINARY_OP(NUMBER_VAL, *); break;
-            case OP_DIVIDE:   BINARY_OP(NUMBER_VAL, /); break;
+            case OP_SUBTRACT: {
+                op_result = binary_op('-', frame);
+                break;
+            }
+            case OP_MULTIPLY: {
+                op_result = binary_op('*', frame);
+                break;
+            }
+            case OP_DIVIDE: {
+                op_result = binary_op('/', frame);
+                break;
+            }
             case OP_NOT: {
                 push(BOOL_VAL(isFalsey(pop())));
                 break;
@@ -276,10 +331,10 @@ static InterpretResult run() {
             case OP_NEGATE: {
                 if (!IS_NUMBER(peek(0))) {
                     runtimeError("Operand must be a number.");
-                    return INTERPRET_RUNTIME_ERROR;
+                    op_result = INTERPRET_RUNTIME_ERROR;
+                } else {
+                    push(NUMBER_VAL(-AS_NUMBER(pop())));
                 }
-
-                push(NUMBER_VAL(-AS_NUMBER(pop())));
                 break;
             }
             case OP_PRINT: {
@@ -288,26 +343,27 @@ static InterpretResult run() {
                 break;
             }
             case OP_JUMP: {
-                uint16_t offset = READ_SHORT();
+                uint16_t offset = read_short(frame);
                 frame->ip += offset;
                 break;
             }
             case OP_JUMP_IF_FALSE: {
-                uint16_t offset = READ_SHORT();
+                uint16_t offset = read_short(frame);
                 if (isFalsey(peek(0))) frame->ip += offset;
                 break;
             }
             case OP_LOOP: {
-                uint16_t offset = READ_SHORT();
+                uint16_t offset = read_short(frame);
                 frame->ip -= offset;
                 break;
             }
             case OP_CALL: {
-                int argCount = READ_BYTE();
+                int argCount = read_byte(frame);
                 if (!callValue(peek(argCount), argCount)) {
-                    return INTERPRET_RUNTIME_ERROR;
+                    op_result = INTERPRET_RUNTIME_ERROR;
+                } else {
+                    frame = &vm.frames[vm.frameCount - 1];
                 }
-                frame = &vm.frames[vm.frameCount - 1];
                 break;
             }
             case OP_RETURN: {
@@ -326,13 +382,11 @@ static InterpretResult run() {
                 break;
             }
         }
-    }
 
-#undef READ_BYTE
-#undef READ_SHORT
-#undef READ_CONSTANT
-#undef READ_STRING
-#undef BINARY_OP
+        if(op_result != INTERPRET_OK) {
+            return op_result;
+        }
+    }
 }
 
 InterpretResult interpret(const char *source) {
