@@ -16,6 +16,17 @@ static Value clockNative(int argCount, Value* args) {
     return NUMBER_VAL((double) clock() / CLOCKS_PER_SEC);
 }
 
+static Value printGlobals(int argc, Value* args) {
+    for (int i = 0; i < vm.globals.capacity; i++) {
+        Entry entry = vm.globals.entries[i];
+        if (entry.key == NULL) continue;
+        Value obj = (OBJ_VAL(&entry.value));
+        printf("[%s %s] ", entry.key->chars, nameType(OBJ_TYPE(obj)));
+    }
+    printf("\n");
+    return NIL_VAL;
+}
+
 static void resetStack() {
     vm.stackTop = vm.stack;
     vm.frameCount = 0;
@@ -68,10 +79,18 @@ static void defineNative(const char* name, NativeFn function) {
 void initVM() {
     resetStack();
     vm.objects = NULL;
+    vm.bytesAllocated = 0;
+    vm.nextGC = 1024 * 1024;
+
+    vm.grayCount = 0;
+    vm.grayCapacity = 0;
+    vm.grayStack = NULL;
+
     initTable(&vm.globals);
     initTable(&vm.strings);
 
     defineNative("clock", clockNative);
+    defineNative("printGlobals", printGlobals);
 }
 
 void freeVM() {
@@ -131,7 +150,6 @@ static bool callValue(Value callee, int argCount) {
                 break;
         }
     }
-
     runtimeError("Can only call functions and classes.");
     return false;
 }
@@ -172,18 +190,6 @@ static bool isFalsey(Value value) {
     return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
 }
 
-static void concatenate(ObjString *a, ObjString * b) {
-    int length = a->length + b->length;
-    char* chars = ALLOCATE(char, length + 1);
-    memcpy(chars, a->chars, a->length);
-    memcpy(chars + a->length, b->chars, b->length);
-    chars[length] = '\0';
-
-    ObjString* result = takeString(chars, length);
-
-    push(OBJ_VAL(result));
-}
-
 static inline void print_trace_execution(CallFrame* frame) {
     printf("          ");
     for (Value *slot = vm.stack; slot < vm.stackTop; slot++) {
@@ -213,7 +219,53 @@ static inline ObjString* read_string(CallFrame* frame) {
     return AS_STRING(read_constant(frame));
 }
 
-static inline InterpretResult binary_op(char op, CallFrame* __unused frame) {
+static ObjString* concatenate(ObjString *a, ObjString * b) {
+    int length = a->length + b->length;
+    char* chars = ALLOCATE(char, length + 1);
+    memcpy(chars, a->chars, a->length);
+    memcpy(chars + a->length, b->chars, b->length);
+    chars[length] = '\0';
+
+    ObjString* result = takeString(chars, length);
+    return result;
+}
+
+static inline InterpretResult coerce_and_concatenate_string() {
+    char buffer[50];
+    ObjString *a;
+    ObjString *b;
+
+    if (IS_STRING(peek(0))) {
+        b = AS_STRING(pop());
+    } else if(IS_NUMBER(peek(0))) {
+        double val = AS_NUMBER(pop());
+        int length = sprintf(buffer, "%g", val);
+        b = copyString(buffer, length);
+    } else {
+        runtimeError("Operands must be numbers or strings.");
+        return INTERPRET_RUNTIME_ERROR;
+    }
+
+    if (IS_STRING(peek(0))) {
+        a = AS_STRING(pop());
+    } else if(IS_NUMBER(peek(0))) {
+        double val = AS_NUMBER(pop());
+        int length = sprintf(buffer, "%g", val);
+        a = copyString(buffer, length);
+    } else {
+        runtimeError("Operands must be numbers or strings.");
+        return INTERPRET_RUNTIME_ERROR;
+    }
+    push(OBJ_VAL(a));
+    push(OBJ_VAL(b));
+    ObjString * result = concatenate(a, b);
+    pop();
+    pop();
+    push(OBJ_VAL(result));
+    return INTERPRET_OK;
+}
+
+static inline InterpretResult binary_op(char op) {
     if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) {
         runtimeError("Operands must be numbers.");
         return INTERPRET_RUNTIME_ERROR;
@@ -223,6 +275,9 @@ static inline InterpretResult binary_op(char op, CallFrame* __unused frame) {
     double a = AS_NUMBER(pop());
     Value value;
     switch(op) {
+        case '+':
+            value = NUMBER_VAL(a + b);
+            break;
         case '-':
             value = NUMBER_VAL(a - b);
             break;
@@ -249,7 +304,7 @@ static inline InterpretResult binary_op(char op, CallFrame* __unused frame) {
 static InterpretResult run() {
     CallFrame* frame = &vm.frames[vm.frameCount - 1];
 
-    char buffer[50];
+
     for (;;) {
 #ifdef DEBUG_TRACE_EXECUTION
         print_trace_execution(frame);
@@ -319,36 +374,18 @@ static InterpretResult run() {
                 break;
             }
             case OP_GREATER: {
-                op_result = binary_op('>', frame);
+                op_result = binary_op('>');
                 break;
             }
             case OP_LESS: {
-                op_result = binary_op('<', frame);
+                op_result = binary_op('<');
                 break;
             }
             case OP_ADD: {
-                if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
-                    ObjString* b = AS_STRING(pop());
-                    ObjString* a = AS_STRING(pop());
-                    concatenate(a, b);
-                } else if (IS_STRING(peek(0)) && IS_NUMBER(peek(1))) {
-                    ObjString* b = AS_STRING(pop());
-                    double a_double = AS_NUMBER(pop());
-                    int length = sprintf(buffer, "%g", a_double);
-                    ObjString *a = copyString(buffer, length);
-                    concatenate(a, b);
-
-                } else if (IS_NUMBER(peek(0)) && IS_STRING(peek(1))) {
-                    double b_double = AS_NUMBER(pop());
-                    ObjString* a = AS_STRING(pop());
-                    int length = sprintf(buffer, "%g", b_double);
-                    ObjString *b = copyString(buffer, length);
-                    concatenate(a, b);
-
+                if (IS_STRING(peek(0)) || IS_STRING(peek(1))) {
+                    op_result = coerce_and_concatenate_string();
                 } else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
-                    double b = AS_NUMBER(pop());
-                    double a = AS_NUMBER(pop());
-                    push(NUMBER_VAL(a + b));
+                    op_result = binary_op('+');
                 } else {
                     runtimeError("Operands must be two numbers or two strings.");
                     op_result = INTERPRET_RUNTIME_ERROR;
@@ -356,15 +393,15 @@ static InterpretResult run() {
                 break;
             }
             case OP_SUBTRACT: {
-                op_result = binary_op('-', frame);
+                op_result = binary_op('-');
                 break;
             }
             case OP_MULTIPLY: {
-                op_result = binary_op('*', frame);
+                op_result = binary_op('*');
                 break;
             }
             case OP_DIVIDE: {
-                op_result = binary_op('/', frame);
+                op_result = binary_op('/');
                 break;
             }
             case OP_NOT: {

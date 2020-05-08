@@ -12,8 +12,14 @@
 static Obj *allocateObject(size_t size, ObjType type) {
     Obj *object = (Obj *) reallocate(NULL, 0, size);
     object->type = type;
+    object->isMarked = false;
     object->next = vm.objects;
     vm.objects = object;
+
+#ifdef DEBUG_LOG_GC
+    printf("%p allocate %ld for %s\n", (void*)object, size, nameType(type));
+#endif
+
     return object;
 }
 
@@ -63,7 +69,9 @@ static ObjString *allocateString(char *chars, int length, uint32_t hash) {
     string->chars = chars;
     string->hash = hash;
 
+    push(OBJ_VAL(string));
     tableSet(&vm.strings, string, NIL_VAL);
+    pop();
 
     return string;
 }
@@ -127,24 +135,19 @@ void printObject(Value value) {
     }
 }
 
-ObjString *tableFindString(Table *table, const char *chars, int length, uint32_t hash) {
-    if (table->count == 0) return NULL;
-
-    uint32_t index = hash % table->capacity;
-
-    for (;;) {
-        Entry *entry = &table->entries[index];
-
-        if (entry->key == NULL) {
-            // Stop if we find an empty non-tombstone entry.
-            if (IS_NIL(entry->value)) return NULL;
-        } else if (entry->key->length == length &&
-                   entry->key->hash == hash &&
-                   memcmp(entry->key->chars, chars, length) == 0) {
-            // We found it.
-            return entry->key;
-        }
-
-        index = (index + 1) % table->capacity;
+char *nameType(ObjType type) {
+    switch(type){
+        case OBJ_CLOSURE:
+            return "Closure";
+        case OBJ_FUNCTION:
+            return "Function";
+        case OBJ_NATIVE:
+            return "Native";
+        case OBJ_STRING:
+            return "String";
+        case OBJ_UPVALUE:
+            return "Upvalue";
+        default:
+            return "Unknown type";
     }
 }
