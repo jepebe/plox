@@ -45,6 +45,7 @@ typedef struct {
 typedef struct {
     Token name;
     int depth;
+    bool read;
     bool isCaptured;
 } Local;
 
@@ -77,6 +78,23 @@ static Chunk* currentChunk() {
     return &current->function->chunk;
 }
 
+static void warningAt(Token* token, const char* message) {
+    parser.warning_count += 1;
+    startWarningYellow();
+    fprintf(stderr, "[line %d] Warning", token->line);
+
+    if (token->type == TOKEN_EOF) {
+        fprintf(stderr, " at end");
+    } else if (token->type == TOKEN_ERROR) {
+        // Nothing.
+    } else {
+        fprintf(stderr, " at '%.*s'", token->length, token->start);
+    }
+    fprintf(stderr, ": %s", message);
+    endColor();
+    fprintf(stderr, "\n");
+}
+
 static void errorAt(Token* token, const char* message) {
     if (parser.panicMode) return;
     parser.panicMode = true;
@@ -94,7 +112,7 @@ static void errorAt(Token* token, const char* message) {
     }
 
     fprintf(stderr, ": %s", message);
-    endErrorRed();
+    endColor();
     fprintf(stderr, "\n");
 
     parser.hadError = true;
@@ -244,6 +262,10 @@ static void endScope() {
         } else {
             emitByte(OP_POP);
         }
+        if (!current->locals[current->localCount - 1].read) {
+            warningAt(&current->locals[current->localCount - 1].name,
+                    "Local variable declared but never used.");
+        }
         current->localCount--;
     }
 }
@@ -270,6 +292,7 @@ static int resolveLocal(Compiler* compiler, Token* name) {
             if (local->depth == -1) {
                 error("Cannot read local variable in its own initializer.");
             }
+            local->read = true;
             return i;
         }
     }
@@ -323,6 +346,7 @@ static void addLocal(Token name) {
     Local* local = &current->locals[current->localCount++];
     local->name = name;
     local->depth = -1;
+    local->read = false;
     local->isCaptured = false;
 }
 

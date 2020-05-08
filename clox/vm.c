@@ -35,7 +35,7 @@ static void runtimeError(const char *format, ...) {
     vfprintf(stderr, format, args);
     va_end(args);
 
-    endErrorRed();
+    endColor();
 
     fputs("\n", stderr);
 

@@ -16,7 +16,11 @@ static void startErrorRed() {
     fprintf(stderr, "\x1b[38;5;1m");
 }
 
-static void endErrorRed() {
+static void startWarningYellow() {
+    fprintf(stderr, "\x1b[38;5;226m");
+}
+
+static void endColor() {
     fprintf(stderr, "\x1b[0m");
 }
 
