@@ -55,20 +55,50 @@ def run_clox_test(interpreter, test_file):
     return result.stdout.decode('utf-8')
 
 
+def compare_to_expected(result, expected_file):
+    with open(expected_file, 'r') as rf:
+        test_output = rf.read()
+        return test_output == result, test_output
+
+
 def run_test(test_file, directory, fail_hard=False):
     print(f'Running: {test_file[len(directory):-4]} ... ', end='')
     interpreter = lox.Lox()
 
-    output = run_plox_test(interpreter, test_file)
-    c_output = run_clox_test(interpreter, test_file)
+    if not os.path.exists(test_file + '.out'):
+        print(red(f'missing test output!'))
+        return False
 
-    if output != c_output:
-        print(red(f'failed! [plox != clox]'))
+    output = run_plox_test(interpreter, test_file)
+    plox_state, plox_expct = compare_to_expected(output, test_file + '.out')
+
+    c_output = run_clox_test(interpreter, test_file)
+    if os.path.exists(test_file + '.cout'):
+        clox_state, clox_expct = compare_to_expected(c_output, test_file + '.cout')
+    else:
+        clox_state, clox_expct = compare_to_expected(c_output, test_file + '.out')
+
+    if plox_state and clox_state:
+        print(green(f'success!'))
+        return True
+
+    if not plox_state or not clox_state:
+        print(red(f'failed!'))
+
+    if not plox_state:
         print('plox:')
         print(output)
         print('---')
+        print('Expected:')
+        print(plox_expct)
+        print('---')
+
+    if not clox_state:
         print('clox:')
         print(c_output)
+        print('---')
+        print('Expected:')
+        print(clox_expct)
         print('---')
 
         # hex_output = [hex(ord(x))[2:] for x in output]
@@ -81,27 +111,11 @@ def run_test(test_file, directory, fail_hard=False):
         # print(':'.join(hex_output))
         # print(':'.join(hex_c_output))
 
-        return False
-
-    test_output_file = test_file + '.out'
-    if not os.path.exists(test_output_file):
-        print(red(f'missing test output'))
-        return False
-    else:
-        with open(test_output_file, 'r') as rf:
-            test_output = rf.read()
-            if test_output != output:
-                print(red(f'failed!'))
-                print('Expected:')
-                print(test_output)
-                print('Got:')
-                print(output)
-                if fail_hard:
-                    dump_output(test_output_file + '.dump', output)
-                return False
-            else:
-                print(green(f'succeeded!'))
-                return True
+    if fail_hard:
+        test_output_file = test_file + '.out'
+        dump_output(test_output_file + '.pdump', output)
+        dump_output(test_output_file + '.cdump', c_output)
+    return False
 
 
 def run_tests(directory, fail_hard=True, exclude=None):

@@ -1,0 +1,3 @@
+[38;5;1m[line 2] Error at 'Foo': A class cannot inherit from itself.[0m
+[38;5;1m[line 5] Error at end: Expect '}' after block.[0m
+2 error(s) and 0 warning(s) occurred

@@ -215,6 +215,8 @@ Token scanToken() {
             return makeToken(match('=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
         case '"': return string();
     }
-
-    return errorToken("Unexpected character.");
+    // TODO: This causes a memory leak.
+    char *error_message;
+    asprintf(&error_message, "Unexpected character: '%c'", c);
+    return errorToken(error_message);
 }

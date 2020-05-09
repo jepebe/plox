@@ -41,6 +41,10 @@ def is_plox_string(operand):
 def stringify(value):
     if value is None:
         return 'nil'
+    if isinstance(value, (int, float)):
+        stringified = str(value)
+        if stringified.endswith('.0'):
+            return stringified[:len(stringified) - 2]
     return str(value)
 
 

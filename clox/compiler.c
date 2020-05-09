@@ -283,9 +283,12 @@ static void endScope() {
         } else {
             emitByte(OP_POP);
         }
-        if (!current->locals[current->localCount - 1].read) {
-            warningAt(&current->locals[current->localCount - 1].name,
-                    "Local variable declared but never used.");
+        Local local = current->locals[current->localCount - 1];
+        if (!local.read) {
+            if (memcmp(local.name.start, "super", 5) != 0) {
+                warningAt(&local.name, "Local variable declared but never used.");
+            }
+
         }
         current->localCount--;
     }
