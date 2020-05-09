@@ -81,8 +81,6 @@ def run_test(test_file, directory, fail_hard=False):
         # print(':'.join(hex_output))
         # print(':'.join(hex_c_output))
 
-
-
         return False
 
     test_output_file = test_file + '.out'
@@ -111,10 +109,11 @@ def run_tests(directory, fail_hard=True, exclude=None):
 
     if directory in exclude:
         print('Skipping...\n')
-        return 0, 0, False
+        return 0, 0, []
 
     success_count = 0
     fail_count = 0
+    failed_tests = []
     dirs, files = list_directory(directory)
 
     for f in files:
@@ -128,18 +127,21 @@ def run_tests(directory, fail_hard=True, exclude=None):
                 success_count += 1
             else:
                 fail_count += 1
+                failed_tests.append(f)
 
             if not test_succeeded and fail_hard:
-                return success_count, fail_count, True
+                return success_count, fail_count, failed_tests
 
     print('')
     for d in dirs:
         s, f, failed = run_tests(d, fail_hard, exclude)
         success_count += s
         fail_count += f
-        if failed:
-            return success_count, fail_count, True
-    return success_count, fail_count, False
+        failed_tests.extend(failed)
+        if len(failed) > 0 and fail_hard:
+            break
+
+    return success_count, fail_count, failed_tests
 
 
 if __name__ == '__main__':
@@ -153,5 +155,9 @@ if __name__ == '__main__':
             test_path += '/'
 
     excludes = ['test/benchmark/']
-    success, failed, _ = run_tests(test_path, fail_hard=False, exclude=excludes)
+    success, failed, failed_tests = run_tests(test_path, fail_hard=False, exclude=excludes)
     print(f'{success} test(s) succeeded and {failed} test(s) failed')
+
+    #print("Overview of failed test:")
+    #for test in failed_tests:
+    #    print(test)
