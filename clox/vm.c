@@ -27,6 +27,26 @@ static Value printGlobals(int argc, Value* args) {
     return NIL_VAL;
 }
 
+static Value utf8Length(int argc, Value* args) {
+    if(argc == 1 && IS_STRING(args[0])) {
+        ObjString *string = AS_STRING(args[0]);
+        size_t len = 0;
+        char* s = string->chars;
+        for (; *s; ++s) if ((*s & 0xC0) != 0x80) ++len;
+        return NUMBER_VAL(len);
+    }
+    return NUMBER_VAL(-1);
+}
+
+static Value bytesLength(int argc, Value* args) {
+    if(argc == 1 && IS_STRING(args[0])) {
+        ObjString *string = AS_STRING(args[0]);
+        return NUMBER_VAL(string->length);
+        //return NUMBER_VAL(strlen(string->chars));
+    }
+    return NUMBER_VAL(-1);
+}
+
 static void resetStack() {
     vm.stackTop = vm.stack;
     vm.frameCount = 0;
@@ -91,6 +111,8 @@ void initVM() {
 
     defineNative("clock", clockNative);
     defineNative("printGlobals", printGlobals);
+    defineNative("len", utf8Length);
+    defineNative("blen", bytesLength);
 }
 
 void freeVM() {
