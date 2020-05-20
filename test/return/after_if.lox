@@ -1,5 +1,6 @@
 fun f() {
   if (true) return "ok";
+  return "not ok";
 }
 
 print f(); // expect: ok

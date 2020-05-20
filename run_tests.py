@@ -172,6 +172,6 @@ if __name__ == '__main__':
     success, failed, failed_tests = run_tests(test_path, fail_hard=False, exclude=excludes)
     print(f'{success} test(s) succeeded and {failed} test(s) failed')
 
-    #print("Overview of failed test:")
+    #print("Overview of failed test(s):")
     #for test in failed_tests:
     #    print(test)

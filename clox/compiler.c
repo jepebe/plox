@@ -71,6 +71,8 @@ typedef struct Compiler {
     int localCount;
     Upvalue upvalues[UINT8_COUNT];
     int scopeDepth;
+    Token return_token;
+    bool return_emitted;
 } Compiler;
 
 typedef struct ClassCompiler {
@@ -89,7 +91,7 @@ static Chunk* currentChunk() {
     return &current->function->chunk;
 }
 
-static void warningAt(Token* token, const char* message) {
+static void warningAt(Token* token, const char* message, bool after) {
     parser.warning_count += 1;
     startWarningYellow();
     fprintf(stderr, "[line %d] Warning", token->line);
@@ -98,6 +100,8 @@ static void warningAt(Token* token, const char* message) {
         fprintf(stderr, " at end");
     } else if (token->type == TOKEN_ERROR) {
         // Nothing.
+    } else if (after) {
+        fprintf(stderr, " after '%.*s'", token->length, token->start);
     } else {
         fprintf(stderr, " at '%.*s'", token->length, token->start);
     }
@@ -253,6 +257,7 @@ static void initCompiler(Compiler* compiler, FunctionType type) {
         local->name.start = "";
         local->name.length = 0;
     }
+    compiler->return_emitted = false;
 }
 
 static ObjFunction* endCompiler() {
@@ -286,7 +291,8 @@ static void endScope() {
         Local local = current->locals[current->localCount - 1];
         if (!local.read) {
             if (memcmp(local.name.start, "super", 5) != 0) {
-                warningAt(&local.name, "Local variable declared but never used.");
+                char *message = "Local variable declared but never used.";
+                warningAt(&local.name, message, false);
             }
 
         }
@@ -978,6 +984,11 @@ static void declaration() {
 }
 
 static void statement() {
+    if(current->return_emitted) {
+        warningAt(&current->return_token, "Unreachable code.", true);
+        current->return_emitted = false;
+    }
+
     if (match(TOKEN_PRINT)) {
         printStatement();
     } else if (match(TOKEN_FOR)) {
@@ -985,6 +996,8 @@ static void statement() {
     } else if (match(TOKEN_IF)) {
         ifStatement();
     } else if (match(TOKEN_RETURN)) {
+        current->return_emitted = true;
+        current->return_token = parser.previous;
         returnStatement();
     } else if (match(TOKEN_WHILE)) {
         whileStatement();

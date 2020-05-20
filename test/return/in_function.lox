@@ -1,6 +1,7 @@
 fun f() {
   return "ok";
   print "bad";
+  print "badder";
 }
 
 print f(); // expect: ok

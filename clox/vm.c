@@ -111,6 +111,8 @@ void initVM() {
 
     vm.initString = NULL;
     vm.initString = copyString("init", 4);
+    vm.getterString = NULL;
+    vm.getterString = copyString("__get__", 7);
 
     defineNative("clock", clockNative);
     defineNative("printGlobals", printGlobals);
@@ -122,6 +124,7 @@ void freeVM() {
     freeTable(&vm.globals);
     freeTable(&vm.strings);
     vm.initString = NULL;
+    vm.getterString = NULL;
     freeObjects();
 }
 
