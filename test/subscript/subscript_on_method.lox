@@ -4,7 +4,7 @@ class A {
     }
 
     __get__ (index) {
-        return '[' + index + ']';
+        return "[" + index + "]";
     }
     method (b) {
         return this.a * b;

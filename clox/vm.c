@@ -333,6 +333,10 @@ static inline InterpretResult coerce_and_concatenate_string() {
         double val = AS_NUMBER(pop());
         int length = sprintf(buffer, "%g", val);
         b = copyString(buffer, length);
+    } else if(IS_BOOL(peek(0))) {
+        char *val = AS_BOOL(peek(0)) ? "true" : "false";
+        b = copyString(val, strlen(val));
+        pop();
     } else {
         runtimeError("Operands must be numbers or strings.");
         return INTERPRET_RUNTIME_ERROR;
@@ -344,6 +348,10 @@ static inline InterpretResult coerce_and_concatenate_string() {
         double val = AS_NUMBER(pop());
         int length = sprintf(buffer, "%g", val);
         a = copyString(buffer, length);
+    } else if(IS_BOOL(peek(0))) {
+        char *val = AS_BOOL(peek(0)) ? "true" : "false";
+        a = copyString(val, strlen(val));
+        pop();
     } else {
         runtimeError("Operands must be numbers or strings.");
         return INTERPRET_RUNTIME_ERROR;
@@ -391,6 +399,12 @@ static inline InterpretResult binary_op(char op) {
     }
     push(value);
     return INTERPRET_OK;
+}
+
+static bool instance_has_property(ObjInstance *instance, ObjString *name) {
+    Value value;
+    return tableGet(&instance->fields, name, &value) ||
+           tableGet(&instance->klass->methods, name, &value);
 }
 
 static InterpretResult run() {
@@ -654,6 +668,35 @@ static InterpretResult run() {
             case OP_METHOD:
                 defineMethod(read_string(frame));
                 break;
+            case OP_SUBSCRIPT: {
+                if (IS_STRING(peek(1)) && IS_NUMBER(peek(0))) {
+                    Value val = pop();
+                    ObjString *string = AS_STRING(peek(0));
+                    int index = (int) AS_NUMBER(val);
+                    if (index < 0 || index >= string->length) {
+                        runtimeError("Index out of bounds.");
+                        op_result = INTERPRET_RUNTIME_ERROR;
+                    } else {
+                        ObjString *chr = copyString(string->chars + index, 1);
+                        pop();
+                        push(OBJ_VAL(chr));
+                    }
+                } else if (IS_INSTANCE(peek(1)) &&
+                           instance_has_property(AS_INSTANCE(peek(1)),
+                                                 vm.getterString)) {
+
+                    if (!invoke(vm.getterString, 1)) {
+                        op_result = INTERPRET_RUNTIME_ERROR;
+                    } else {
+                        frame = &vm.frames[vm.frameCount - 1];
+                    }
+
+                } else {
+                    runtimeError("Subscript not supported.");
+                    op_result = INTERPRET_RUNTIME_ERROR;
+                }
+                break;
+            }
         }
 
         if(op_result != INTERPRET_OK) {

@@ -3,7 +3,7 @@ class A {
         this.a = a;
     }
     __get__ (index) {
-        return '[' + index * this.a + ']';
+        return "[" + index * this.a + "]";
     }
 }
 class B {

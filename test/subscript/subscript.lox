@@ -1,18 +1,19 @@
 class A {
     init() {
-        this.a = 1;
+        this.a = "abcdefg";
     }
 
     __get__ (index) {
-        return '[' + index + ']';
+        return "[" + index + "]";
     }
-    method (b) {
-        return this.a * b;
-    }
-    property {
-        return this.a * 2.5;
+
+    str() {
+        return this.a;
     }
 }
 
 var a = A();
-print 'implement with __get__ -->' + (a[1] == '[1]');
+print "implement with __get__ -->" + (a[1] == "[1]");
+print "implement with __get__ -->" + (a["s"] == "[s]"); // not limited to int
+print a.a[0] + a.a[2] + a.a[4];
+print a.str()[1] + a.str()[3];
