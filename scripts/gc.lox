@@ -1,0 +1,14 @@
+fun descend(count) {
+    fun generate(i) {
+        var s = "";
+        for(var j = count; j > 0; j = j - 1) {
+            s = s + " " + (i - j);
+        }
+        return s;
+    }
+    for (var i = 0; i < count; i = i + 1) {
+        var s = generate(i);
+    }
+}
+
+descend(150);

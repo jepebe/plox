@@ -1,0 +1,62 @@
+class Brioche {}
+print Brioche;
+print Brioche();
+
+class Toast {}
+var toast = Toast();
+print toast.jam = "grape"; // Prints "grape".
+
+class Pair {}
+
+var pair = Pair();
+pair.first = 1;
+pair.second = 2;
+print pair.first + pair.second; // 3.
+
+class Brunch {
+    init(food, drink) {}
+    eggs() {}
+    bacon() {}
+}
+
+var brunch = Brunch("Chicken", "Coke");
+var eggs = brunch.eggs;
+print eggs;
+print eggs();
+
+class Scone {
+  topping(first, second) {
+    print "scone with " + first + " and " + second;
+  }
+}
+
+var scone = Scone();
+scone.topping("berries", "cream");
+
+class CoffeeMaker {
+  init(coffee) {
+    this.coffee = coffee;
+  }
+
+  brew() {
+    print "Enjoy your cup of " + this.coffee;
+
+    // No reusing the grounds!
+    this.coffee = nil;
+  }
+}
+
+var maker = CoffeeMaker("coffee and chicory");
+maker.brew();
+
+class Doughnut {
+  cook() {
+    print "Dunk in the fryer.";
+  }
+}
+
+class Cruller < Doughnut {
+  finish() {
+    print "Glaze with icing";
+  }
+}

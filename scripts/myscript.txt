@@ -1,0 +1,63 @@
+class Classname {
+    init(x, y=2) {
+        self._x = x
+        self._y = y
+    }
+
+    x {
+        return self._x
+    }
+
+    x= (val) {
+        self._x = val
+    }
+
+    x? {
+        return not self._x is Undefined
+    }
+
+    def calculate(factor=1.0) {
+        return self._x * self._y * factor
+    }
+}
+
+generator range(from, to=Undefined, step=1, inclusive=False) {
+    if to is Undefined then
+        to = from
+        from = 0
+    end
+
+    while from < to or (inclusive and from == to) then
+        yield from
+        from = from + step
+    end
+}
+
+operator <String, Classname> @ (op1, op2) {
+    return op2[op1]
+}
+
+c = 29
+if 28 <= c <= 30 then
+
+else
+
+end
+
+a_list = [1, 2, 3, 4, 5, 'a', "b", True, False, Undefined, Null]
+
+a = 5 if True else 6
+a = if true then "a" else "A" end
+a = 'a' if True != False else 'A'
+
+items = [i for i in range(10)]
+
+
+def fib(n) {
+    if n < 2 then
+        return n
+    end
+    return fib(n - 2) + fib(n - 1)
+}
+
+print(fib(35))

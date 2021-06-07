@@ -70,7 +70,7 @@ static void runtimeError(const char *format, ...) {
 
     fputs("\n", stderr);
 
-    for (int i = vm.frameCount - 1; i >= 0; i--) {
+    /*for (int i = vm.frameCount - 1; i >= 0; i--) {
         frame = &vm.frames[i];
         ObjFunction* function = frame->closure->function;
         // -1 because the IP is sitting on the next instruction to be
@@ -83,7 +83,7 @@ static void runtimeError(const char *format, ...) {
         } else {
             fprintf(stderr, "%s()\n", function->name->chars);
         }
-    }
+    }*/
 
     resetStack();
 }
